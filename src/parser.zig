@@ -2,7 +2,7 @@ const std = @import("std");
 const assert = std.debug.assert;
 const ascii = std.ascii;
 
-const main = @import("main.zig");
+const main = @import("test.zig");
 const strings = @import("strings.zig");
 const nodes = @import("nodes.zig");
 const scanners = @import("scanners.zig");

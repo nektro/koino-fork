@@ -31,5 +31,6 @@ pub fn build(b: *std.Build) !void {
     });
     deps.addAllTo(test_exe);
     const test_step = b.step("test", "Run all the tests");
-    test_step.dependOn(&test_exe.step);
+    const test_run = b.addRunArtifact(test_exe);
+    test_step.dependOn(&test_run.step);
 }
