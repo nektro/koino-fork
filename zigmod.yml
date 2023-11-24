@@ -1,0 +1,11 @@
+id: tq8c9uu13noyrr0jh27wp5nvil9c1svbu7g33u90gfp23rtc
+name: koino
+main: src/koino.zig
+license: MIT
+description: CommonMark + GFM compatible Markdown parser and renderer
+dependencies:
+  - src: git https://github.com/lun-4/zunicode
+  - src: git https://github.com/kivikakk/libpcre.zig
+  - src: git https://github.com/kivikakk/htmlentities.zig
+root_dependencies:
+  - src: git https://github.com/Hejsil/zig-clap

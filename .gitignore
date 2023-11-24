@@ -1,3 +1,6 @@
 /zig-*
 koino.code-workspace
 /result*
+.zigmod
+deps.zig
+files.zig

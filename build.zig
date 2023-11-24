@@ -1,15 +1,9 @@
 const std = @import("std");
-const linkPcre = @import("vendor/libpcre/build.zig").linkPcre;
+const deps = @import("./deps.zig");
 
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-
-    var deps = std.StringHashMap(*std.build.Module).init(b.allocator);
-    try deps.put("libpcre", b.addModule("libpcre", .{ .source_file = .{ .path = "vendor/libpcre/src/main.zig" } }));
-    try deps.put("htmlentities", b.addModule("htmlentities", .{ .source_file = .{ .path = "vendor/htmlentities/src/main.zig" } }));
-    try deps.put("clap", b.addModule("clap", .{ .source_file = .{ .path = "vendor/zig-clap/clap.zig" } }));
-    try deps.put("zunicode", b.addModule("zunicode", .{ .source_file = .{ .path = "vendor/zunicode/src/zunicode.zig" } }));
 
     const exe = b.addExecutable(.{
         .name = "koino",
@@ -17,7 +11,7 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
     });
-    try addCommonRequirements(b, exe, &deps);
+    deps.addAllTo(exe);
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);
@@ -35,15 +29,7 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
     });
-    try addCommonRequirements(b, test_exe, &deps);
+    deps.addAllTo(test_exe);
     const test_step = b.step("test", "Run all the tests");
     test_step.dependOn(&test_exe.step);
-}
-
-fn addCommonRequirements(b: *std.Build, cs: *std.build.CompileStep, deps: *const std.StringHashMap(*std.build.Module)) !void {
-    var it = deps.iterator();
-    while (it.next()) |entry| {
-        cs.addModule(entry.key_ptr.*, entry.value_ptr.*);
-    }
-    try linkPcre(b, cs);
 }
