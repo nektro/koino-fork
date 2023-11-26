@@ -4,3 +4,4 @@ koino.code-workspace
 .zigmod
 deps.zig
 files.zig
+zigmod.lock
