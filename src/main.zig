@@ -139,9 +139,5 @@ fn enableExtension(extension: []const u8, options: *Options) !void {
 }
 
 test {
-    _ = &koino;
-    _ = &Parser;
-    _ = &Options;
-    _ = &nodes;
-    _ = &html;
+    std.testing.refAllDeclsRecursive(koino);
 }

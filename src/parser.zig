@@ -155,7 +155,7 @@ pub const Parser = struct {
         var new_line: ?[]u8 = null;
         if (input.len == 0 or !strings.isLineEndChar(input[input.len - 1])) {
             new_line = try self.allocator.alloc(u8, input.len + 1);
-            std.mem.copy(u8, new_line.?, input);
+            @memcpy(new_line.?, input);
             new_line.?[input.len] = '\n';
             line = new_line.?;
         } else {
@@ -652,7 +652,7 @@ pub const Parser = struct {
                                 .Text => |adj| {
                                     const old_len = root.len;
                                     root.* = try self.allocator.realloc(root.*, old_len + adj.len);
-                                    std.mem.copy(u8, root.*[old_len..], adj);
+                                    @memcpy(root.*[old_len..], adj);
                                     ns.detachDeinit();
                                 },
                                 else => {

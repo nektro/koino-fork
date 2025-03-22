@@ -3,7 +3,7 @@ const ascii = std.ascii;
 const assert = std.debug.assert;
 const nodes = @import("nodes.zig");
 const strings = @import("strings.zig");
-const zunicode = @import("zunicode");
+const icu = @import("icu");
 
 pub const AutolinkProcessor = struct {
     allocator: std.mem.Allocator,
@@ -246,7 +246,7 @@ pub const AutolinkProcessor = struct {
     }
 
     fn isValidHostchar(c: u21) bool {
-        return !zunicode.isSpace(c) and !zunicode.isPunct(c);
+        return !icu.hasProperty(c, .White_Space) and !icu.hasProperty(c, .Terminal_Punctuation);
     }
 
     const LINK_END_ASSORTMENT = strings.createMap("?!.,:*_~'\"");

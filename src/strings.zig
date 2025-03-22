@@ -5,7 +5,7 @@ const ascii = std.ascii;
 
 const nodes = @import("nodes.zig");
 const htmlentities = @import("htmlentities");
-const zunicode = @import("zunicode");
+const icu = @import("icu");
 
 pub fn isLineEndChar(ch: u8) bool {
     return switch (ch) {
@@ -78,7 +78,7 @@ test "trim" {
 pub fn trimIt(al: *std.ArrayList(u8)) void {
     const trimmed = trim(al.items);
     if (al.items.ptr == trimmed.ptr and al.items.len == trimmed.len) return;
-    std.mem.copy(u8, al.items, trimmed);
+    @memcpy(al.items, trimmed);
     al.items.len = trimmed.len;
 }
 
@@ -287,7 +287,7 @@ pub fn unescapeInto(text: []const u8, out: *std.ArrayList(u8)) !?usize {
             return null;
         if (text[i] == ';') {
             var key = [_]u8{'&'} ++ [_]u8{';'} ** (ENTITY_MAX_LENGTH + 1);
-            mem.copy(u8, key[1..], text[0..i]);
+            @memcpy(key[1..], text[0..i]);
 
             if (htmlentities.lookup(key[0 .. i + 2])) |item| {
                 try out.appendSlice(item.characters);
@@ -437,15 +437,14 @@ pub fn normalizeLabel(allocator: mem.Allocator, s: []const u8) ![]u8 {
     var view = std.unicode.Utf8View.initUnchecked(trimmed);
     var it = view.iterator();
     while (it.nextCodepoint()) |cp| {
-        const rune: i32 = @intCast(cp);
-        if (zunicode.isSpace(rune)) {
+        if (icu.hasProperty(cp, .White_Space)) {
             if (!last_was_whitespace) {
                 last_was_whitespace = true;
                 try buffer.append(' ');
             }
         } else {
             last_was_whitespace = false;
-            const lower = zunicode.toLower(rune);
+            const lower = icu.toLower(cp) orelse cp;
             try encodeUtf8Into(@intCast(lower), &buffer);
         }
     }
@@ -467,7 +466,7 @@ pub fn toLower(allocator: mem.Allocator, s: []const u8) ![]u8 {
     var it = view.iterator();
     while (it.nextCodepoint()) |cp| {
         const rune: i32 = @intCast(cp);
-        const lower = zunicode.toLower(rune);
+        const lower = icu.toLower(rune) orelse rune;
         try encodeUtf8Into(@intCast(lower), &buffer);
     }
     return buffer.toOwnedSlice();
