@@ -41,18 +41,18 @@ pub fn main() !void {
 
     if (args.positionals.len > 0) {
         for (args.positionals) |pos| {
-            var markdown = try std.fs.cwd().readFileAlloc(allocator, pos, 1024 * 1024 * 1024);
+            const markdown = try std.fs.cwd().readFileAlloc(allocator, pos, 1024 * 1024 * 1024);
             defer allocator.free(markdown);
             try parser.feed(markdown);
         }
     } else {
-        var markdown = try std.io.getStdIn().reader().readAllAlloc(allocator, 1024 * 1024 * 1024);
+        const markdown = try std.io.getStdIn().reader().readAllAlloc(allocator, 1024 * 1024 * 1024);
         defer allocator.free(markdown);
         try parser.feed(markdown);
     }
 
     var doc = try parser.finish();
-    var output = blk: {
+    const output = blk: {
         var arr = std.ArrayList(u8).init(allocator);
         errdefer arr.deinit();
         try html.print(arr.writer(), allocator, options, doc);
@@ -81,7 +81,7 @@ const ClapResult = clap.Result(clap.Help, &params, clap.parsers.default);
 fn parseArgs(options: *Options) !ClapResult {
     var stderr = std.io.getStdErr().writer();
 
-    var res = try clap.parse(clap.Help, &params, clap.parsers.default, .{});
+    const res = try clap.parse(clap.Help, &params, clap.parsers.default, .{});
 
     if (res.args.help != 0) {
         try stderr.writeAll("Usage: koino ");
@@ -139,5 +139,9 @@ fn enableExtension(extension: []const u8, options: *Options) !void {
 }
 
 test {
-    std.testing.refAllDecls(@This());
+    _ = &koino;
+    _ = &Parser;
+    _ = &Options;
+    _ = &nodes;
+    _ = &html;
 }

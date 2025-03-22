@@ -1,4 +1,5 @@
 /zig-*
+.zig-cache
 koino.code-workspace
 /result*
 .zigmod
