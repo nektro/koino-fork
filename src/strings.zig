@@ -32,73 +32,25 @@ pub fn isBlank(s: []const u8) bool {
     return true;
 }
 
-test "isBlank" {
-    try testing.expect(isBlank(""));
-    try testing.expect(isBlank("\nx"));
-    try testing.expect(isBlank("    \t\t  \r"));
-    try testing.expect(!isBlank("e"));
-    try testing.expect(!isBlank("   \t    e "));
-}
-
 const SPACES = "\t\n\x0b\x0c\r ";
 
 pub fn ltrim(s: []const u8) []const u8 {
     return mem.trimLeft(u8, s, SPACES);
 }
 
-test "ltrim" {
-    try testing.expectEqualStrings("abc", ltrim("abc"));
-    try testing.expectEqualStrings("abc", ltrim("   abc"));
-    try testing.expectEqualStrings("abc", ltrim("      \n\n \t\r abc"));
-    try testing.expectEqualStrings("abc \n zz \n   ", ltrim("\nabc \n zz \n   "));
-}
-
 pub fn rtrim(s: []const u8) []const u8 {
     return mem.trimRight(u8, s, SPACES);
-}
-
-test "rtrim" {
-    try testing.expectEqualStrings("abc", rtrim("abc"));
-    try testing.expectEqualStrings("abc", rtrim("abc   "));
-    try testing.expectEqualStrings("abc", rtrim("abc      \n\n \t\r "));
-    try testing.expectEqualStrings("  \nabc \n zz", rtrim("  \nabc \n zz \n"));
 }
 
 pub fn trim(s: []const u8) []const u8 {
     return mem.trim(u8, s, SPACES);
 }
 
-test "trim" {
-    try testing.expectEqualStrings("abc", trim("abc"));
-    try testing.expectEqualStrings("abc", trim("  abc   "));
-    try testing.expectEqualStrings("abc", trim(" abc      \n\n \t\r "));
-    try testing.expectEqualStrings("abc \n zz", trim("  \nabc \n zz \n"));
-}
-
 pub fn trimIt(al: *std.ArrayList(u8)) void {
     const trimmed = trim(al.items);
     if (al.items.ptr == trimmed.ptr and al.items.len == trimmed.len) return;
-    @memcpy(al.items, trimmed);
+    std.mem.copyForwards(u8, al.items, trimmed);
     al.items.len = trimmed.len;
-}
-
-test "trimIt" {
-    var buf = std.ArrayList(u8).init(std.testing.allocator);
-    defer buf.deinit();
-
-    try buf.appendSlice("abc");
-    trimIt(&buf);
-    try std.testing.expectEqualStrings("abc", buf.items);
-
-    buf.items.len = 0;
-    try buf.appendSlice("  \tabc");
-    trimIt(&buf);
-    try std.testing.expectEqualStrings("abc", buf.items);
-
-    buf.items.len = 0;
-    try buf.appendSlice(" \r abc  \n ");
-    trimIt(&buf);
-    try std.testing.expectEqualStrings("abc", buf.items);
 }
 
 pub fn chopTrailingHashtags(s: []const u8) []const u8 {
@@ -116,17 +68,6 @@ pub fn chopTrailingHashtags(s: []const u8) []const u8 {
     } else {
         return r;
     }
-}
-
-test "chopTrailingHashtags" {
-    try testing.expectEqualStrings("xyz", chopTrailingHashtags("xyz"));
-    try testing.expectEqualStrings("xyz#", chopTrailingHashtags("xyz#"));
-    try testing.expectEqualStrings("xyz###", chopTrailingHashtags("xyz###"));
-    try testing.expectEqualStrings("xyz###", chopTrailingHashtags("xyz###  "));
-    try testing.expectEqualStrings("xyz###", chopTrailingHashtags("xyz###  #"));
-    try testing.expectEqualStrings("xyz", chopTrailingHashtags("xyz  "));
-    try testing.expectEqualStrings("xyz", chopTrailingHashtags("xyz  ##"));
-    try testing.expectEqualStrings("xyz", chopTrailingHashtags("xyz  ##"));
 }
 
 pub fn normalizeCode(allocator: mem.Allocator, s: []const u8) mem.Allocator.Error![]u8 {
@@ -162,28 +103,6 @@ pub fn normalizeCode(allocator: mem.Allocator, s: []const u8) mem.Allocator.Erro
     return code.toOwnedSlice();
 }
 
-const Case = struct {
-    in: []const u8,
-    out: []const u8,
-};
-
-fn testCases(comptime function: fn (mem.Allocator, []const u8) anyerror![]u8, cases: []const Case) !void {
-    for (cases) |case| {
-        const result = try function(std.testing.allocator, case.in);
-        defer std.testing.allocator.free(result);
-        try testing.expectEqualStrings(case.out, result);
-    }
-}
-
-test "normalizeCode" {
-    try testCases(normalizeCode, &[_]Case{
-        .{ .in = "qwe", .out = "qwe" },
-        .{ .in = " qwe ", .out = "qwe" },
-        .{ .in = "  qwe  ", .out = " qwe " },
-        .{ .in = " abc\rdef'\r\ndef ", .out = "abc def' def" },
-    });
-}
-
 pub fn removeTrailingBlankLines(line: *std.ArrayList(u8)) void {
     var i = line.items.len - 1;
     while (true) : (i -= 1) {
@@ -203,23 +122,6 @@ pub fn removeTrailingBlankLines(line: *std.ArrayList(u8)) void {
         if (!isLineEndChar(line.items[i])) continue;
         line.items.len = i;
         break;
-    }
-}
-
-test "removeTrailingBlankLines" {
-    const cases = [_]Case{
-        .{ .in = "\n\n   \r\t\n ", .out = "" },
-        .{ .in = "yep\nok\n\n  ", .out = "yep\nok" },
-        .{ .in = "yep  ", .out = "yep  " },
-    };
-
-    var line = std.ArrayList(u8).init(std.testing.allocator);
-    defer line.deinit();
-    for (cases) |case| {
-        line.items.len = 0;
-        try line.appendSlice(case.in);
-        removeTrailingBlankLines(&line);
-        try testing.expectEqualStrings(case.out, line.items);
     }
 }
 
@@ -287,7 +189,7 @@ pub fn unescapeInto(text: []const u8, out: *std.ArrayList(u8)) !?usize {
             return null;
         if (text[i] == ';') {
             var key = [_]u8{'&'} ++ [_]u8{';'} ** (ENTITY_MAX_LENGTH + 1);
-            @memcpy(key[1..], text[0..i]);
+            std.mem.copyForwards(u8, key[1..], text[0..i]);
 
             if (htmlentities.lookup(key[0 .. i + 2])) |item| {
                 try out.appendSlice(item.characters);
@@ -337,20 +239,6 @@ pub fn unescapeHtml(allocator: mem.Allocator, html: []const u8) ![]u8 {
     return al.toOwnedSlice();
 }
 
-test "unescapeHtml" {
-    try testCases(unescapeHtml, &[_]Case{
-        .{ .in = "&#116;&#101;&#115;&#116;", .out = "test" },
-        .{ .in = "&#12486;&#12473;&#12488;", .out = "テスト" },
-        .{ .in = "&#x74;&#x65;&#X73;&#X74;", .out = "test" },
-        .{ .in = "&#x30c6;&#x30b9;&#X30c8;", .out = "テスト" },
-
-        // "Although HTML5 does accept some entity references without a trailing semicolon
-        // (such as &copy), these are not recognized here, because it makes the grammar too
-        // ambiguous:"
-        .{ .in = "&hellip;&eacute&Eacute;&rrarr;&oS;", .out = "…&eacuteÉ⇉Ⓢ" },
-    });
-}
-
 pub fn cleanAutolink(allocator: mem.Allocator, url: []const u8, kind: nodes.AutolinkType) ![]u8 {
     const trimmed = trim(url);
     if (trimmed.len == 0)
@@ -363,16 +251,6 @@ pub fn cleanAutolink(allocator: mem.Allocator, url: []const u8, kind: nodes.Auto
 
     try unescapeHtmlInto(trimmed, &buf);
     return buf.toOwnedSlice();
-}
-
-test "cleanAutolink" {
-    const email = try cleanAutolink(std.testing.allocator, "  hello&#x40;world.example ", .Email);
-    defer std.testing.allocator.free(email);
-    try testing.expectEqualStrings("mailto:hello@world.example", email);
-
-    const uri = try cleanAutolink(std.testing.allocator, "  www&#46;com ", .URI);
-    defer std.testing.allocator.free(uri);
-    try testing.expectEqualStrings("www.com", uri);
 }
 
 fn unescape(allocator: mem.Allocator, s: []const u8) ![]u8 {
@@ -398,12 +276,6 @@ pub fn cleanUrl(allocator: mem.Allocator, url: []const u8) ![]u8 {
     return unescape(allocator, b);
 }
 
-test "cleanUrl" {
-    const url = try cleanUrl(std.testing.allocator, "  \\(hello\\)&#x40;world  ");
-    defer std.testing.allocator.free(url);
-    try testing.expectEqualStrings("(hello)@world", url);
-}
-
 pub fn cleanTitle(allocator: mem.Allocator, title: []const u8) ![]u8 {
     if (title.len == 0)
         return &[_]u8{};
@@ -416,16 +288,6 @@ pub fn cleanTitle(allocator: mem.Allocator, title: []const u8) ![]u8 {
         try unescapeHtml(allocator, title);
     defer allocator.free(b);
     return unescape(allocator, b);
-}
-
-test "cleanTitle" {
-    try testCases(cleanTitle, &[_]Case{
-        .{ .in = "\\'title", .out = "'title" },
-        .{ .in = "'title'", .out = "title" },
-        .{ .in = "(&#x74;&#x65;&#X73;&#X74;)", .out = "test" },
-        .{ .in = "\"&#x30c6;&#x30b9;&#X30c8;\"", .out = "テスト" },
-        .{ .in = "'&hellip;&eacute&Eacute;&rrarr;&oS;'", .out = "…&eacuteÉ⇉Ⓢ" },
-    });
 }
 
 pub fn normalizeLabel(allocator: mem.Allocator, s: []const u8) ![]u8 {
@@ -451,33 +313,17 @@ pub fn normalizeLabel(allocator: mem.Allocator, s: []const u8) ![]u8 {
     return buffer.toOwnedSlice();
 }
 
-test "normalizeLabel" {
-    try testCases(normalizeLabel, &[_]Case{
-        .{ .in = "Hello", .out = "hello" },
-        .{ .in = "   Y        E  S  ", .out = "y e s" },
-        .{ .in = "yÉs", .out = "yés" },
-    });
-}
-
 pub fn toLower(allocator: mem.Allocator, s: []const u8) ![]u8 {
     var buffer = try std.ArrayList(u8).initCapacity(allocator, s.len);
     errdefer buffer.deinit();
     var view = try std.unicode.Utf8View.init(s);
     var it = view.iterator();
     while (it.nextCodepoint()) |cp| {
-        const rune: i32 = @intCast(cp);
+        const rune: u32 = cp;
         const lower = icu.toLower(rune) orelse rune;
         try encodeUtf8Into(@intCast(lower), &buffer);
     }
     return buffer.toOwnedSlice();
-}
-
-test "toLower" {
-    try testCases(toLower, &[_]Case{
-        .{ .in = "Hello", .out = "hello" },
-        .{ .in = "ΑαΒβΓγΔδΕεΖζΗηΘθΙιΚκΛλΜμ", .out = "ααββγγδδεεζζηηθθιικκλλμμ" },
-        .{ .in = "АаБбВвГгДдЕеЁёЖжЗзИиЙйКкЛлМмНнОоПпРрСсТтУуФфХхЦцЧчШшЩщЪъЫыЬьЭэЮюЯя", .out = "ааббввггддееёёжжззииййккллммннооппррссттууффххццччшшщщъъыыььээююяя" },
-    });
 }
 
 pub fn createMap(chars: []const u8) [256]bool {
@@ -486,18 +332,4 @@ pub fn createMap(chars: []const u8) [256]bool {
         arr[c] = true;
     }
     return arr;
-}
-
-test "createMap" {
-    comptime {
-        const m = createMap("abcxyz");
-        try testing.expect(m['a']);
-        try testing.expect(m['b']);
-        try testing.expect(m['c']);
-        try testing.expect(!m['d']);
-        try testing.expect(!m['e']);
-        try testing.expect(!m['f']);
-        try testing.expect(m['x']);
-        try testing.expect(!m[0]);
-    }
 }

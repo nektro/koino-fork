@@ -61,7 +61,7 @@ pub fn HtmlFormatter(comptime Writer: type) type {
             }
         }
 
-        fn escape(self: *Self, s: []const u8) !void {
+        pub fn escape(self: *Self, s: []const u8) !void {
             var offset: usize = 0;
             for (s, 0..) |c, i| {
                 if (NEEDS_ESCAPED[c]) {
@@ -451,7 +451,7 @@ pub fn HtmlFormatter(comptime Writer: type) type {
             return gop.value_ptr.*;
         }
 
-        fn anchorize(self: *Self, header: []const u8) ![]const u8 {
+        pub fn anchorize(self: *Self, header: []const u8) ![]const u8 {
             const lower = try strings.toLower(self.allocator, header);
             defer self.allocator.free(lower);
             const removed = try scanners.removeAnchorizeRejectedChars(self.allocator, lower);
@@ -534,22 +534,4 @@ pub fn HtmlFormatter(comptime Writer: type) type {
             }
         }
     };
-}
-
-test "escaping works as expected" {
-    var buffer = std.ArrayList(u8).init(std.testing.allocator);
-    defer buffer.deinit();
-
-    var formatter = makeHtmlFormatter(buffer.writer(), std.testing.allocator, .{});
-    defer formatter.deinit();
-
-    try formatter.escape("<hello & goodbye>");
-    try std.testing.expectEqualStrings("&lt;hello &amp; goodbye&gt;", buffer.items);
-}
-
-test "lowercase anchor generation" {
-    var formatter = makeHtmlFormatter(std.io.null_writer, std.testing.allocator, .{});
-    defer formatter.deinit();
-
-    try std.testing.expectEqualStrings("yés", try formatter.anchorize("YÉS"));
 }
