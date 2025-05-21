@@ -13,13 +13,7 @@ dependencies:
     dependencies:
       - src: git https://github.com/nektro/pcre-8.45
 
-  - src: git https://github.com/kivikakk/htmlentities.zig commit-9cc3600c53ae60565d839eaf93d5c519c21e27cc
-    id: mr0i9fhju8jho92xf5lct4ywf2hqzjf2esi3jwx87jolclc3
-    name: htmlentities
-    main: src/main.zig
-    license: MIT
-    description: HTML entity data for Zig.
-
+  - src: git https://github.com/nektro/zig-htmlentities
   - src: git https://github.com/nektro/zig-icu
 
 root_dependencies:

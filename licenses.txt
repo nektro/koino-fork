@@ -2,9 +2,9 @@ MIT:
 = https://spdx.org/licenses/MIT
 - This
 - git https://github.com/kivikakk/libpcre.zig
+- git https://github.com/nektro/zig-htmlentities
 - git https://github.com/nektro/zig-icu
 - git https://github.com/nektro/zig-unicode-ucd
-- git https://github.com/kivikakk/htmlentities.zig
 
 BSD-3-Clause:
 = https://spdx.org/licenses/BSD-3-Clause
