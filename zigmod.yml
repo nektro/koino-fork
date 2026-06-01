@@ -15,4 +15,3 @@ dependencies:
 
   - src: git https://github.com/nektro/zig-htmlentities
   - src: git https://github.com/nektro/zig-icu
-  - src: git https://github.com/nektro/zig-unicode-ucd
