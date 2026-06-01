@@ -6,3 +6,8 @@ src/entities.zig
 
 # example outputs
 examples/output-*
+
+.zigmod
+deps.zig
+files.zig
+zigmod.lock

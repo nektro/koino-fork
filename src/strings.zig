@@ -1,6 +1,7 @@
 const std = @import("std");
 const htmlentities = @import("htmlentities");
-const uucode = @import("uucode");
+const icu = @import("icu");
+const ucd = @import("unicode-ucd");
 const mem = std.mem;
 const testing = std.testing;
 const ascii = std.ascii;
@@ -14,7 +15,7 @@ const nodes = @import("nodes.zig");
 pub fn isUnicodeWhitespace(cp: u21) bool {
     return switch (cp) {
         0x09, 0x0A, 0x0C, 0x0D => true,
-        else => uucode.get(.general_category, cp) == .separator_space,
+        else => ucd.unicode_data.find(cp)[2] == .Zs,
     };
 }
 
@@ -25,15 +26,8 @@ pub fn isUnicodePunctuation(cp: u21) bool {
         '!'...'/', ':'...'@', '['...'`', '{'...'~' => true,
         else => false,
     };
-    return switch (uucode.get(.general_category, cp)) {
-        .punctuation_connector,
-        .punctuation_dash,
-        .punctuation_open,
-        .punctuation_close,
-        .punctuation_initial_quote,
-        .punctuation_final_quote,
-        .punctuation_other,
-        => true,
+    return switch (ucd.unicode_data.find(cp)[2]) {
+        .Pc, .Pd, .Pe, .Pf, .Pi, .Po, .Ps => true,
         else => false,
     };
 }
@@ -477,7 +471,7 @@ pub fn normalizeLabel(allocator: mem.Allocator, s: []const u8) ![]u8 {
             }
         } else {
             last_was_whitespace = false;
-            try encodeUtf8Into(uucode.get(.simple_lowercase_mapping, cp), &buffer);
+            try encodeUtf8Into(ucd.unicode_data.find(cp)[12] orelse cp, &buffer);
         }
     }
     return buffer.toOwnedSlice();
@@ -497,7 +491,7 @@ pub fn toLower(allocator: mem.Allocator, s: []const u8) ![]u8 {
     var view = try std.unicode.Utf8View.init(s);
     var it = view.iterator();
     while (it.nextCodepoint()) |cp| {
-        try encodeUtf8Into(uucode.get(.simple_lowercase_mapping, cp), &buffer);
+        try encodeUtf8Into(ucd.unicode_data.find(cp)[12] orelse cp, &buffer);
     }
     return buffer.toOwnedSlice();
 }

@@ -1,0 +1,18 @@
+id: nk3z3vs6u729iek3szflxbn85hcse0x95v2b7h2k7saevkys
+name: koino
+main: src/koino.zig
+license: MIT
+description: CommonMark + GFM compatible Markdown parser and renderer
+dependencies:
+  - src: git https://github.com/kivikakk/libpcre.zig
+    id: qoedvk82xtp01pt6w062hh2jshjx31dtd2ikxmb580ogjgzy
+    name: libpcre
+    main: src/main.zig
+    license: MIT
+    description: Zig bindings to libpcre
+    dependencies:
+      - src: git https://github.com/nektro/pcre-8.45
+
+  - src: git https://github.com/nektro/zig-htmlentities
+  - src: git https://github.com/nektro/zig-icu
+  - src: git https://github.com/nektro/zig-unicode-ucd
