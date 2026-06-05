@@ -67,7 +67,7 @@ test "isBlank" {
 const SPACES = "\t\n\x0b\x0c\r ";
 
 pub fn ltrim(s: []const u8) []const u8 {
-    return mem.trimLeft(u8, s, SPACES);
+    return mem.trimStart(u8, s, SPACES);
 }
 
 test "ltrim" {
@@ -78,7 +78,7 @@ test "ltrim" {
 }
 
 pub fn rtrim(s: []const u8) []const u8 {
-    return mem.trimRight(u8, s, SPACES);
+    return mem.trimEnd(u8, s, SPACES);
 }
 
 test "rtrim" {

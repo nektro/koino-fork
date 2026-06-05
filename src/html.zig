@@ -15,13 +15,13 @@ pub fn print(writer: anytype, allocator: std.mem.Allocator, options: Options, ro
     try formatter.format(root, false);
 }
 
-pub fn makeHtmlFormatter(writer: anytype, allocator: std.mem.Allocator, options: Options) HtmlFormatter(@TypeOf(writer)) {
-    return HtmlFormatter(@TypeOf(writer)).init(writer, allocator, options);
+pub fn makeHtmlFormatter(writer: *std.Io.Writer, allocator: std.mem.Allocator, options: Options) HtmlFormatter() {
+    return HtmlFormatter().init(writer, allocator, options);
 }
 
-pub fn HtmlFormatter(comptime Writer: type) type {
+pub fn HtmlFormatter() type {
     return struct {
-        writer: Writer,
+        writer: *std.Io.Writer,
         allocator: std.mem.Allocator,
         options: Options,
         last_was_lf: bool = true,
@@ -30,7 +30,7 @@ pub fn HtmlFormatter(comptime Writer: type) type {
 
         const Self = @This();
 
-        pub fn init(writer: Writer, allocator: std.mem.Allocator, options: Options) Self {
+        pub fn init(writer: *std.Io.Writer, allocator: std.mem.Allocator, options: Options) Self {
             return .{
                 .writer = writer,
                 .allocator = allocator,
@@ -542,18 +542,20 @@ pub fn HtmlFormatter(comptime Writer: type) type {
 }
 
 test "escaping works as expected" {
-    var buffer = ArrayList(u8).init(std.testing.allocator);
+    var buffer = std.Io.Writer.Allocating.init(std.testing.allocator);
     defer buffer.deinit();
 
-    var formatter = makeHtmlFormatter(buffer.writer(), std.testing.allocator, .{});
+    var formatter = makeHtmlFormatter(&buffer.writer, std.testing.allocator, .{});
     defer formatter.deinit();
 
     try formatter.escape("<hello & goodbye>");
-    try std.testing.expectEqualStrings("&lt;hello &amp; goodbye&gt;", buffer.items);
+    try std.testing.expectEqualStrings("&lt;hello &amp; goodbye&gt;", buffer.written());
 }
 
 test "lowercase anchor generation" {
-    var formatter = makeHtmlFormatter(std.io.null_writer, std.testing.allocator, .{});
+    var buffer = std.Io.Writer.Allocating.init(std.testing.allocator);
+    defer buffer.deinit();
+    var formatter = makeHtmlFormatter(&buffer.writer, std.testing.allocator, .{});
     defer formatter.deinit();
 
     try std.testing.expectEqualStrings("yés", try formatter.anchorize("YÉS"));

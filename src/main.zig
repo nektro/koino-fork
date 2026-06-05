@@ -49,15 +49,15 @@ fn enableExtension(extension: []const u8, options: *Options) !void {
 /// Uses a GeneralPurposeAllocator for scratch work instead of an ArenaAllocator to aid in locating memory leaks.
 /// Result HTML is allocated by std.testing.allocator.
 pub fn testMarkdownToHtml(options: Options, markdown: []const u8) ![]u8 {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.DebugAllocator(.{}){};
     defer _ = gpa.deinit();
 
     var doc = try koino.parse(gpa.allocator(), markdown, options);
     defer doc.deinit();
 
-    var result = ArrayList(u8).init(std.testing.allocator);
+    var result = std.Io.Writer.Allocating.init(std.testing.allocator);
     errdefer result.deinit();
-    try html.print(result.writer(), gpa.allocator(), options, doc);
+    try html.print(&result.writer, gpa.allocator(), options, doc);
     return result.toOwnedSlice();
 }
 
